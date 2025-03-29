@@ -44,6 +44,9 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 export default function CreateLinkPage() {
   const router = useRouter();
   
+  // Estado de autenticação
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  
   // Estados básicos para o formulário
   const [originalUrl, setOriginalUrl] = useState("");
   const [alias, setAlias] = useState("");
@@ -51,6 +54,7 @@ export default function CreateLinkPage() {
   const [isAliasAvailable, setIsAliasAvailable] = useState(true);
   const [isUrlValid, setIsUrlValid] = useState(true);
   const [createdLink, setCreatedLink] = useState<string | null>(null);
+  const [createdLinkData, setCreatedLinkData] = useState<any>(null);
   
   // Estados para campos avançados
   const [isPrivate, setIsPrivate] = useState(false);
@@ -216,7 +220,7 @@ export default function CreateLinkPage() {
 
   // Construir a URL encurtada para preview
   const getShortUrl = (): string => {
-    const baseUrl = window.location.origin;
+    const baseUrl = "https://condensr-back.onrender.com";
     const aliasToUse = alias || suggestedAlias;
     return aliasToUse ? `${baseUrl}/${aliasToUse}` : baseUrl;
   };
@@ -306,40 +310,194 @@ export default function CreateLinkPage() {
     setAndroidAppPath("");
     setTrackEvents(false);
     setCreatedLink(null);
+    setCreatedLinkData(null);
+    setQrCodeUrl("");
     setFormError(null);
     setFormSuccess(null);
   };
+
+  // Verificar autenticação ao carregar o componente
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      setIsAuthenticated(false);
+      setFormError("Você precisa estar autenticado para criar links. Por favor, faça login.");
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   // Manipular o envio do formulário
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
+    console.log("🔍 Iniciando criação de link...");
+    
     if (!validateForm()) {
+      console.error("❌ Validação falhou. Verificando formulário...");
       return;
     }
     
+    // Verificar autenticação antes de enviar
+    const token = localStorage.getItem('accessToken');
+    console.log("🔑 Token encontrado:", token ? `${token.substring(0, 15)}...` : "nenhum token");
+    
+    if (!token) {
+      console.error("❌ Token não encontrado. Usuário não autenticado.");
+      setFormError("Você precisa estar autenticado para criar links. Por favor, faça login.");
+      return;
+    }
+    
+    console.log("✅ Autenticação verificada. Token encontrado.");
     setIsLoading(true);
     setFormError(null);
     
     try {
-      // Simulação de envio para API - em produção seria uma chamada real
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Construir o objeto de dados para enviar à API
+      const linkData: any = {
+        originalUrl: originalUrl,
+      };
+
+      // Adicionar campos opcionais somente se estiverem preenchidos
+      if (alias) linkData.alias = alias;
+      if (expiryDate) linkData.expiresAt = expiryDate.toISOString();
+      if (isPrivate) {
+        linkData.isPrivate = true;
+        if (password) linkData.password = password;
+      }
+      if (maxClicks) linkData.maxClicks = Number(maxClicks);
+      if (tags.length > 0) linkData.tags = tags;
+      if (category) linkData.category = category;
       
-      // URL encurtada gerada
-      const shortUrl = getShortUrl();
-      setCreatedLink(shortUrl);
+      // Metadados como objeto JSON
+      if (metadata && metadata !== "{}") {
+        try {
+          linkData.metadata = JSON.parse(metadata);
+        } catch (e) {
+          console.error("❌ Erro ao parsear metadados:", e);
+          // Se não conseguir parsear, envia como string
+          linkData.metadata = metadata;
+        }
+      }
       
-      // Gerar QR Code se solicitado
-      if (enableQrCode) {
-        setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shortUrl)}`);
+      // Parâmetros UTM
+      if (utmSource || utmMedium || utmCampaign || utmTerm || utmContent) {
+        linkData.utmParameters = {};
+        if (utmSource) linkData.utmParameters.source = utmSource;
+        if (utmMedium) linkData.utmParameters.medium = utmMedium;
+        if (utmCampaign) linkData.utmParameters.campaign = utmCampaign;
+        if (utmTerm) linkData.utmParameters.term = utmTerm;
+        if (utmContent) linkData.utmParameters.content = utmContent;
+      }
+      
+      // Redirecionamento por dispositivo
+      if (mobileUrl) linkData.mobileUrl = mobileUrl;
+      if (tabletUrl) linkData.tabletUrl = tabletUrl;
+      if (desktopUrl) linkData.desktopUrl = desktopUrl;
+      
+      // QR Code
+      if (enableQrCode) linkData.generateQrCode = true;
+      
+      // Open Graph
+      if (ogTitle || ogDescription || ogImage || ogType) {
+        linkData.openGraph = {};
+        if (ogTitle) linkData.openGraph.title = ogTitle;
+        if (ogDescription) linkData.openGraph.description = ogDescription;
+        if (ogImage) linkData.openGraph.image = ogImage;
+        if (ogType) linkData.openGraph.type = ogType;
+      }
+      
+      // Deep Links
+      if (iosAppId || iosAppPath || androidPackage || androidAppPath) {
+        linkData.deepLinkRules = {
+          trackDeepLinkEvents: trackEvents
+        };
+        
+        if (iosAppId || iosAppPath) {
+          linkData.deepLinkRules.ios = {};
+          if (iosAppId) linkData.deepLinkRules.ios.appStoreUrl = `https://apps.apple.com/br/app/id${iosAppId}`;
+          if (iosAppPath) linkData.deepLinkRules.ios.appScheme = iosAppPath;
+        }
+        
+        if (androidPackage || androidAppPath) {
+          linkData.deepLinkRules.android = {};
+          if (androidPackage) linkData.deepLinkRules.android.playStoreUrl = `https://play.google.com/store/apps/details?id=${androidPackage}`;
+          if (androidAppPath) linkData.deepLinkRules.android.appScheme = androidAppPath;
+        }
+      }
+      
+      console.log("📊 Dados a serem enviados para API:", JSON.stringify(linkData, null, 2));
+      console.log("🔗 Enviando requisição para: https://condensr-back.onrender.com/links/authenticated");
+      
+      // Verificar o formato do header de autorização
+      const authHeader = `Bearer ${token}`;
+      console.log("🔐 Header de autorização:", "Bearer " + (token ? token.substring(0, 15) + "..." : ""));
+      
+      // Fazer a requisição à API
+      const response = await fetch('https://condensr-back.onrender.com/links/authenticated', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader
+        },
+        body: JSON.stringify(linkData)
+      });
+      
+      console.log("📡 Status da resposta:", response.status);
+      
+      // Verificar se o token está expirado ou inválido
+      if (response.status === 401) {
+        console.error("❌ Token expirado ou inválido. Status 401");
+        setFormError("Sua sessão expirou. Por favor, faça login novamente.");
+        localStorage.removeItem('accessToken'); // Limpar o token inválido
+        return;
+      }
+      
+      // Verificar o tipo de conteúdo da resposta
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        console.error("❌ Resposta não é JSON:", contentType);
+        const responseText = await response.text();
+        console.error("❌ Conteúdo da resposta:", responseText.substring(0, 500) + "...");
+        throw new Error("O servidor retornou um formato inesperado. Por favor, tente novamente ou entre em contato com o suporte.");
+      }
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("❌ Erro retornado pela API:", errorData);
+        throw new Error(errorData.message || 'Falha ao criar o link');
+      }
+      
+      const data = await response.json();
+      console.log("✅ Link criado com sucesso! Dados retornados:", JSON.stringify(data, null, 2));
+      
+      // Armazenar os dados completos do link criado
+      setCreatedLinkData(data);
+      
+      // Sucesso! Atualizar a UI com o link criado
+      const finalUrl = `${window.location.origin}/${data.alias || data.shortCode}`;
+      console.log("🌐 URL encurtada final:", finalUrl);
+      setCreatedLink(finalUrl);
+      
+      // Usar diretamente o QR code base64 da resposta
+      if (data.qrCode) {
+        console.log("🔳 QR Code recebido do servidor (base64)");
+        setQrCodeUrl(data.qrCode); // Já está no formato data:image/png;base64,...
       }
       
       setFormSuccess("Link criado com sucesso!");
     } catch (error) {
-      console.error("Erro ao criar link:", error);
-      setFormError("Ocorreu um erro ao criar o link. Tente novamente.");
+      console.error("❌ Erro ao criar link:", error);
+      
+      // Melhorar a mensagem de erro para problemas de parsing JSON
+      if (error instanceof SyntaxError && error.message.includes("Unexpected token")) {
+        setFormError("Erro na comunicação com o servidor. Isso pode indicar um problema de autenticação ou que o servidor está indisponível.");
+      } else {
+        setFormError(`Ocorreu um erro ao criar o link: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      }
     } finally {
       setIsLoading(false);
+      console.log("🏁 Processo de criação de link finalizado");
     }
   };
 
@@ -420,7 +578,25 @@ export default function CreateLinkPage() {
         </div>
       </div>
       
-      {/* Mensagem de erro/sucesso aprimorada */}
+      {/* Mensagem de erro de autenticação */}
+      {isAuthenticated === false && (
+        <div className="bg-rose-50 border-l-4 border-rose-500 text-rose-700 p-4 rounded-lg flex items-center shadow-sm animate-[fadeIn_0.3s_ease-in-out]">
+          <div className="rounded-full bg-rose-100 p-1.5 mr-3 flex-shrink-0">
+            <Key size={18} weight="bold" />
+          </div>
+          <div>
+            <h3 className="font-medium">Autenticação necessária</h3>
+            <p className="text-sm text-rose-600">
+              Você precisa estar autenticado para criar links.{' '}
+              <Link href="/auth/login" className="text-[#3366CC] underline hover:text-[#1E88E5]">
+                Faça login
+              </Link>{' '}
+              para continuar.
+            </p>
+          </div>
+        </div>
+      )}
+      
       {formError && (
         <div className="bg-rose-50 border-l-4 border-rose-500 text-rose-700 p-4 rounded-lg flex items-center shadow-sm animate-[fadeIn_0.3s_ease-in-out]">
           <div className="rounded-full bg-rose-100 p-1.5 mr-3 flex-shrink-0">
@@ -484,16 +660,68 @@ export default function CreateLinkPage() {
                 </div>
               </div>
               
-              {enableQrCode && qrCodeUrl && (
+              {/* Informações do link criado */}
+              {createdLinkData && (
+                <div className="bg-blue-50 rounded-lg border border-blue-100 p-4 mt-4">
+                  <h4 className="font-medium text-[#3366CC] mb-3">Detalhes do Link</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex flex-wrap justify-between">
+                      <span className="text-slate-700 font-medium mr-2">ID:</span>
+                      <span className="text-slate-600 font-mono">{createdLinkData.id?.substring(0, 8)}...</span>
+                    </div>
+                    {createdLinkData.shortCode && (
+                      <div className="flex flex-wrap justify-between">
+                        <span className="text-slate-700 font-medium mr-2">Código:</span>
+                        <span className="text-slate-600 font-mono">{createdLinkData.shortCode}</span>
+                      </div>
+                    )}
+                    {createdLinkData.alias && (
+                      <div className="flex flex-wrap justify-between">
+                        <span className="text-slate-700 font-medium mr-2">Alias:</span>
+                        <span className="text-slate-600">{createdLinkData.alias}</span>
+                      </div>
+                    )}
+                    {createdLinkData.expiresAt && (
+                      <div className="flex flex-wrap justify-between">
+                        <span className="text-slate-700 font-medium mr-2">Expira em:</span>
+                        <span className="text-slate-600">{new Date(createdLinkData.expiresAt).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                    {createdLinkData.maxClicks && (
+                      <div className="flex flex-wrap justify-between">
+                        <span className="text-slate-700 font-medium mr-2">Cliques máximos:</span>
+                        <span className="text-slate-600">{createdLinkData.maxClicks}</span>
+                      </div>
+                    )}
+                    {createdLinkData.isPrivate && (
+                      <div className="flex items-center text-slate-700 mt-1">
+                        <Key size={16} className="mr-1 text-[#3366CC]" />
+                        <span className="bg-blue-100 text-[#3366CC] text-xs px-2 py-0.5 rounded-full">Protegido por senha</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {qrCodeUrl && (
                 <div className="flex flex-col items-center mt-6 p-6 bg-white rounded-lg border border-slate-200 shadow-sm">
                   <h4 className="text-slate-800 font-medium mb-4">QR Code para seu link</h4>
                   <div className="bg-white p-3 border-2 border-blue-100 rounded-lg shadow-sm">
-                    <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />
+                    <img 
+                      src={qrCodeUrl} 
+                      alt="QR Code" 
+                      className="w-48 h-48"
+                      onError={(e) => {
+                        console.error("❌ Erro ao carregar QR Code da API");
+                        // Fallback para API pública de QR se a imagem da API não carregar
+                        (e.target as HTMLImageElement).src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(createdLink || '')}`;
+                      }}
+                    />
                   </div>
                   <div className="mt-4 flex space-x-3">
                     <a 
                       href={qrCodeUrl} 
-                      download="qrcode.png"
+                      download={`qrcode-${createdLinkData?.alias || createdLinkData?.shortCode || 'link'}.png`}
                       className="text-sm bg-blue-50 text-[#3366CC] hover:bg-blue-100 px-4 py-2 rounded-lg flex items-center font-medium transition-colors"
                     >
                       <DownloadSimple size={16} className="mr-2" weight="bold" />
@@ -502,7 +730,17 @@ export default function CreateLinkPage() {
                     <button
                       type="button"
                       className="text-sm bg-slate-50 text-slate-600 hover:bg-slate-100 px-4 py-2 rounded-lg flex items-center font-medium transition-colors"
-                      onClick={() => {/* Implementar compartilhamento */}}
+                      onClick={() => {
+                        if (navigator.share) {
+                          navigator.share({
+                            title: 'QR Code para link encurtado',
+                            text: 'Escaneie este QR Code para acessar o link',
+                            url: createdLink || '',
+                          });
+                        } else {
+                          copyToClipboard();
+                        }
+                      }}
                     >
                       <Share size={16} className="mr-2" weight="bold" />
                       Compartilhar
@@ -521,13 +759,15 @@ export default function CreateLinkPage() {
                   Criar Outro Link
                 </button>
                 <div className="flex items-center space-x-3">
-                  <Link 
-                    href={`/dashboard/links/edit/${alias || suggestedAlias}`}
-                    className="inline-flex items-center px-5 py-2.5 border border-slate-300 shadow-sm text-sm font-medium rounded-lg text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors"
-                  >
-                    <PencilSimple size={18} className="mr-2" weight="bold" />
-                    Editar Link
-                  </Link>
+                  {createdLinkData && (
+                    <Link 
+                      href={`/dashboard/links/edit/${createdLinkData.alias || createdLinkData.shortCode}`}
+                      className="inline-flex items-center px-5 py-2.5 border border-slate-300 shadow-sm text-sm font-medium rounded-lg text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors"
+                    >
+                      <PencilSimple size={18} className="mr-2" weight="bold" />
+                      Editar Link
+                    </Link>
+                  )}
                   <Link 
                     href="/dashboard/links"
                     className="inline-flex items-center px-5 py-2.5 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-[#3366CC] hover:bg-[#1E88E5] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#3366CC] transition-colors"
