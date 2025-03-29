@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 90">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
   <!-- Background Shape (optional) -->
-  <rect width="90" height="90" fill="transparent"/>
+  <rect width="400" height="200" fill="transparent"/>
   
   <!-- Main Logo Elements -->
-  <g transform="translate(20, 0)">
+  <g transform="translate(50, 50)">
     <!-- Logo Icon - Represents Link Compression -->
     <g>
       <!-- Left Chain Link -->
@@ -13,6 +13,13 @@
       <!-- Right Chain Link (Smaller - Condensed) -->
       <path d="M60,50 C60,41.6 53.4,35 45,35 C36.6,35 30,41.6 30,50 C30,58.4 36.6,65 45,65 L52,65" 
             fill="none" stroke="#1E88E5" stroke-width="12" stroke-linecap="round"/>
+    </g>
+    
+    <!-- Logo Text -->
+    <g transform="translate(90, 70)">
+      <text font-family="Arial, sans-serif" font-weight="700" font-size="48" fill="#2C3E50">
+        Condensr
+      </text>
     </g>
   </g>
 </svg>

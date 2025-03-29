@@ -2,20 +2,21 @@ import Link from "next/link";
 
 export default function Logo() {
   return (
-    <Link href="/" className="inline-flex" aria-label="Cruip">
-      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28">
-        <path
-          className="fill-blue-500"
-          fillRule="evenodd"
-          d="M15.052 0c6.914.513 12.434 6.033 12.947 12.947h-5.015a7.932 7.932 0 0 1-7.932-7.932V0Zm-2.105 22.985V28C6.033 27.487.513 21.967 0 15.053h5.015a7.932 7.932 0 0 1 7.932 7.932Z"
-          clipRule="evenodd"
-        />
-        <path
-          className="fill-blue-300"
-          fillRule="evenodd"
-          d="M0 12.947C.513 6.033 6.033.513 12.947 0v5.015a7.932 7.932 0 0 1-7.932 7.932H0Zm22.984 2.106h5.015C27.486 21.967 21.966 27.487 15.052 28v-5.015a7.932 7.932 0 0 1 7.932-7.932Z"
-          clipRule="evenodd"
-        />
+    <Link href="/" className="inline-flex" aria-label="Condensr">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 90" width="28" height="28">
+        {/* Main Logo Elements */}
+        <g transform="translate(20, 0)">
+          {/* Logo Icon - Represents Link Compression */}
+          <g>
+            {/* Left Chain Link */}
+            <path d="M40,50 C40,36.2 29.8,25 16,25 C2.2,25 -8,36.2 -8,50 C-8,63.8 2.2,75 16,75 L26,75" 
+                  fill="none" stroke="#3366CC" strokeWidth="12" strokeLinecap="round"/>
+            
+            {/* Right Chain Link (Smaller - Condensed) */}
+            <path d="M60,50 C60,41.6 53.4,35 45,35 C36.6,35 30,41.6 30,50 C30,58.4 36.6,65 45,65 L52,65" 
+                  fill="none" stroke="#1E88E5" strokeWidth="12" strokeLinecap="round"/>
+          </g>
+        </g>
       </svg>
     </Link>
   );

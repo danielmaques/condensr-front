@@ -1,19 +1,25 @@
-import Image from "next/image";
-import Logo01 from "@/public/images/logo-01.svg";
-import Logo02 from "@/public/images/logo-02.svg";
+import Android from "@/public/images/Android.svg";
+import Apple from "@/public/images/Apple.svg";
 import Logo03 from "@/public/images/logo-03.svg";
-import Logo04 from "@/public/images/logo-04.svg";
 import Logo05 from "@/public/images/logo-05.svg";
 import Logo06 from "@/public/images/logo-06.svg";
 import Logo07 from "@/public/images/logo-07.svg";
 import Logo08 from "@/public/images/logo-08.svg";
 import Logo09 from "@/public/images/logo-09.svg";
+import Image from "next/image";
 
 export default function BusinessCategories() {
   return (
     <section>
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="pb-12 md:pb-20">
+          {/* Section header */}
+          <div className="pb-12 text-center md:pb-20">
+            <h2 className="text-3xl font-bold md:text-4xl">
+              Ideal solution for any digital strategy
+            </h2>
+          </div>
+
           {/* Tab panels */}
           <div className="relative flex h-[324px] items-center justify-center">
             {/* Small blue dots */}
@@ -177,13 +183,21 @@ export default function BusinessCategories() {
             <div className="absolute before:absolute before:-inset-3 before:animate-[spin_3s_linear_infinite] before:rounded-full before:border before:border-transparent before:[mask-composite:exclude_!important] before:[mask:linear-gradient(white_0_0)_padding-box,_linear-gradient(white_0_0)] before:[background:conic-gradient(from_180deg,transparent,var(--color-blue-500))_border-box]">
               <div className="animate-[breath_8s_ease-in-out_infinite_both]">
                 <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-lg shadow-black/[0.03] before:absolute before:inset-0 before:m-[8.334%] before:rounded-[inherit] before:border before:border-gray-700/5 before:bg-gray-200/60 before:[mask-image:linear-gradient(to_bottom,black,transparent)]">
-                  <Image
-                    className="relative"
-                    src={Logo01}
-                    width={32}
-                    height={32}
-                    alt="Logo 01"
-                  />
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 90" width="32" height="32">
+                    {/* Main Logo Elements */}
+                    <g transform="translate(20, 0)">
+                      {/* Logo Icon - Represents Link Compression */}
+                      <g>
+                        {/* Left Chain Link */}
+                        <path d="M40,50 C40,36.2 29.8,25 16,25 C2.2,25 -8,36.2 -8,50 C-8,63.8 2.2,75 16,75 L26,75" 
+                              fill="none" stroke="#3366CC" strokeWidth="12" strokeLinecap="round"/>
+                        
+                        {/* Right Chain Link (Smaller - Condensed) */}
+                        <path d="M60,50 C60,41.6 53.4,35 45,35 C36.6,35 30,41.6 30,50 C30,58.4 36.6,65 45,65 L52,65" 
+                              fill="none" stroke="#1E88E5" strokeWidth="12" strokeLinecap="round"/>
+                      </g>
+                    </g>
+                  </svg>
                 </div>
               </div>
             </div>
@@ -195,7 +209,7 @@ export default function BusinessCategories() {
                     <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg shadow-black/[0.03] before:absolute before:inset-0 before:m-[8.334%] before:rounded-[inherit] before:border before:border-gray-700/5 before:bg-gray-200/60 before:[mask-image:linear-gradient(to_bottom,black,transparent)]">
                       <Image
                         className="relative"
-                        src={Logo02}
+                        src={Android}
                         width={23}
                         height={22}
                         alt="Logo 02"
@@ -221,7 +235,7 @@ export default function BusinessCategories() {
                     <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-lg shadow-black/[0.03] before:absolute before:inset-0 before:m-[8.334%] before:rounded-[inherit] before:border before:border-gray-700/5 before:bg-gray-200/60 before:[mask-image:linear-gradient(to_bottom,black,transparent)]">
                       <Image
                         className="relative"
-                        src={Logo04}
+                        src={Apple}
                         width={24}
                         height={22}
                         alt="Logo 04"
@@ -302,3 +316,4 @@ export default function BusinessCategories() {
     </section>
   );
 }
+

@@ -1,13 +1,13 @@
 export const metadata = {
-  title: "Home - Simple",
-  description: "Page description",
+  title: "Condensr - Intelligent Link Shortener",
+  description: "Shorten, customize and analyze your links with the most advanced platform on the market",
 };
 
-import Hero from "@/components/hero-home";
 import BusinessCategories from "@/components/business-categories";
-import FeaturesPlanet from "@/components/features-planet";
-import LargeTestimonial from "@/components/large-testimonial";
 import Cta from "@/components/cta";
+import FeaturesPlanet from "@/components/features-planet";
+import Hero from "@/components/hero-home";
+import LargeTestimonial from "@/components/large-testimonial";
 
 export default function Home() {
   return (
